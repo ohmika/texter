@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#eeeeee" />
+  <title>Texter</title>
+  <style>
+    /*<![CDATA[*/
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      color: #222;
+      background: #fff;
+    }
+
+    #textbox {
+      display: block;
+      flex: 1 1 auto;
+      min-height: 0;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0.75rem;
+      border: 0;
+      border-right: 1px solid #add8e6;
+      border-radius: 0;
+      outline: none;
+      background: transparent;
+      color: inherit;
+      font: 16px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      overflow: auto;
+      resize: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #textbox.narrow {
+      max-width: calc(80ch + 1.5rem);
+    }
+
+    nav {
+      display: flex;
+      flex: 0 0 auto;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem 1rem;
+      min-height: 3rem;
+      padding: 0.5rem max(0.75rem, env(safe-area-inset-right))
+        calc(0.5rem + env(safe-area-inset-bottom))
+        max(0.75rem, env(safe-area-inset-left));
+      border-top: 1px solid #c8c8c8;
+      background: #eee;
+      color: #555;
+      font: 0.875rem/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    #stats,
+    #controls {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.25rem 0.45rem;
+    }
+
+    #stats {
+      white-space: nowrap;
+    }
+
+    #controls {
+      justify-content: flex-end;
+    }
+
+    nav a {
+      color: #333;
+      text-decoration: underline;
+      text-underline-offset: 0.15em;
+    }
+
+    nav a:focus-visible,
+    nav input:focus-visible,
+    nav select:focus-visible,
+    nav label:focus-visible {
+      outline: 2px solid #176b87;
+      outline-offset: 2px;
+    }
+
+    nav input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      margin: 0;
+      accent-color: #176b87;
+    }
+
+    #filename,
+    #extension {
+      min-height: 2.5rem;
+      padding: 0.35rem 0.5rem;
+      border: 1px solid #999;
+      border-radius: 0.25rem;
+      background: #fff;
+      color: #222;
+      font: inherit;
+    }
+
+    #filename {
+      width: 10rem;
+      max-width: 38vw;
+    }
+
+    #extension {
+      min-width: 5.5rem;
+    }
+
+    #open.mobile-unavailable {
+      display: none;
+    }
+
+    #file-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      clip-path: inset(50%);
+    }
+
+    @media (max-width: 640px) {
+      nav {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 0.35rem;
+        padding-top: 0.45rem;
+        font-size: 0.8125rem;
+      }
+
+      #controls {
+        justify-content: flex-start;
+        gap: 0.5rem 0.65rem;
+      }
+
+      #controls > [aria-hidden="true"] {
+        display: none;
+      }
+
+      #save {
+        display: flex;
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      #filename {
+        flex: 1 1 7rem;
+        width: auto;
+        max-width: none;
+        min-width: 0;
+      }
+
+      #extension {
+        flex: 0 0 auto;
+      }
+
+      nav a {
+        display: inline-flex;
+        min-height: 2.5rem;
+        align-items: center;
+        padding: 0 0.2rem;
+      }
+    }
+
+    @media print {
+      body {
+        display: block;
+        height: auto;
+        overflow: visible;
+      }
+
+      #textbox {
+        width: 100%;
+        min-height: 95vh;
+        border: 0;
+        overflow: visible;
+        white-space: pre-wrap;
+      }
+
+      nav {
+        display: none;
+      }
+    }
+    /*]]>*/
+  </style>
+</head>
+<body>
+  <textarea id="textbox" autofocus="autofocus" spellcheck="false"
+    aria-label="Note text" placeholder="Type here"></textarea>
+
+  <nav aria-label="Notepad controls">
+    <span id="stats" aria-live="polite">
+      <span><span id="char-count">0</span> chars</span>
+      <span aria-hidden="true">│</span>
+      <span><span id="word-count">0</span> words</span>
+      <span aria-hidden="true">│</span>
+      <span><span id="line-count">0</span> lines</span>
+    </span>
+
+    <span id="controls">
+      <input type="checkbox" id="fullwidth" />
+      <label for="fullwidth">80 Column</label>
+      <span aria-hidden="true">│</span>
+
+      <input type="checkbox" id="spellcheck" />
+      <label for="spellcheck">Spell-checking</label>
+      <span aria-hidden="true">│</span>
+
+      <a href="#" id="print">Print</a>
+      <span aria-hidden="true">│</span>
+
+      <span id="open">
+        <input type="file" id="file-input" accept="text/*,.txt,.md,.csv,.json,.xml,.html,.xhtml,.css,.js,.yaml" />
+        <a href="#" id="open-link">Open</a>
+      </span>
+      <span aria-hidden="true">│</span>
+
+      <span id="save">
+        <input id="filename" type="text" value="texter" aria-label="File name" />
+        <select id="extension" aria-label="Download file type">
+          <option value="txt">.txt</option>
+          <option value="md">.md</option>
+          <option value="csv">.csv</option>
+          <option value="json">.json</option>
+          <option value="xml">.xml</option>
+          <option value="html">.html</option>
+          <option value="xhtml">.xhtml</option>
+          <option value="css">.css</option>
+          <option value="js">.js</option>
+          <option value="yaml">.yaml</option>
+        </select>
+        <a href="#" id="save-link">Download</a>
+      </span>
+    </span>
+  </nav>
+
+  <script type="application/javascript">
+    //<![CDATA[
+    (function () {
+      "use strict";
+
+      var textbox = document.getElementById("textbox");
+      var filenameBox = document.getElementById("filename");
+      var fileInput = document.getElementById("file-input");
+      var saveLink = document.getElementById("save-link");
+      var extensionSelect = document.getElementById("extension");
+      var openControl = document.getElementById("open");
+      var saveTimer = null;
+
+      function isMobileClient() {
+        return window.matchMedia("(max-width: 640px), (pointer: coarse)").matches ||
+          /Android|iPhone|iPad|iPod|Mobile/i.test(window.navigator.userAgent);
+      }
+
+      function updateImportAvailability() {
+        var unavailable = isMobileClient();
+        openControl.classList.toggle("mobile-unavailable", unavailable);
+        fileInput.disabled = unavailable;
+        document.getElementById("open-link").setAttribute("aria-disabled", unavailable ? "true" : "false");
+        document.getElementById("open-link").title = unavailable ? "Import is available on desktop clients" : "Import a text file";
+      }
+
+      function getMimeType(extension) {
+        var mimeTypes = {
+          txt: "text/plain", md: "text/markdown", csv: "text/csv", json: "application/json",
+          xml: "application/xml", html: "text/html", xhtml: "application/xhtml+xml",
+          css: "text/css", js: "text/javascript", yaml: "application/yaml"
+        };
+        return mimeTypes[extension] || "text/plain";
+      }
+
+      function updateStats() {
+        var value = textbox.value;
+        var words = value.trim() === "" ? 0 : value.trim().split(/\s+/).length;
+        var lines = value === "" ? 0 : value.split(/\r\n|\r|\n/).length;
+
+        document.getElementById("char-count").textContent = value.length;
+        document.getElementById("word-count").textContent = words;
+        document.getElementById("line-count").textContent = lines;
+      }
+
+      function saveLocally() {
+        try {
+          window.localStorage.setItem("texter", textbox.value);
+        } catch (error) {
+        }
+      }
+
+      function scheduleLocalSave() {
+        window.clearTimeout(saveTimer);
+        saveTimer = window.setTimeout(saveLocally, 300);
+      }
+
+      function getFilename() {
+        var name = filenameBox.value.trim() || "texter";
+        var extension = extensionSelect.value;
+        name = name.replace(/\.[^.\/\\]+$/, "");
+        return (name || "texter") + "." + extension;
+      }
+
+      textbox.addEventListener("input", function () {
+        updateStats();
+        scheduleLocalSave();
+      });
+
+      textbox.addEventListener("keydown", function (event) {
+        if (event.key === "Tab") {
+          event.preventDefault();
+          var start = textbox.selectionStart;
+          var end = textbox.selectionEnd;
+          textbox.value = textbox.value.slice(0, start) + "\t" + textbox.value.slice(end);
+          textbox.selectionStart = textbox.selectionEnd = start + 1;
+          updateStats();
+          scheduleLocalSave();
+        }
+      });
+
+      window.addEventListener("beforeunload", saveLocally);
+
+      try {
+        textbox.value = window.localStorage.getItem("texter") || "";
+      } catch (error) {
+        textbox.value = "";
+      }
+      textbox.setSelectionRange(textbox.value.length, textbox.value.length);
+      updateStats();
+
+      saveLink.addEventListener("click", function (event) {
+        event.preventDefault();
+
+        var extension = extensionSelect.value;
+        var blob = new Blob([textbox.value], { type: getMimeType(extension) + ";charset=utf-8" });
+        var objectUrl = URL.createObjectURL(blob);
+        var link = document.createElement("a");
+
+        link.href = objectUrl;
+        link.download = getFilename();
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        window.setTimeout(function () {
+          URL.revokeObjectURL(objectUrl);
+        }, 1000);
+      });
+
+      document.getElementById("open-link").addEventListener("click", function (event) {
+        event.preventDefault();
+        if (isMobileClient()) {
+          updateImportAvailability();
+          return;
+        }
+        fileInput.click();
+      });
+
+      updateImportAvailability();
+      window.addEventListener("resize", updateImportAvailability);
+      if (window.matchMedia) {
+        var mobileQuery = window.matchMedia("(max-width: 640px), (pointer: coarse)");
+        if (mobileQuery.addEventListener) {
+          mobileQuery.addEventListener("change", updateImportAvailability);
+        } else if (mobileQuery.addListener) {
+          mobileQuery.addListener(updateImportAvailability);
+        }
+      }
+
+      fileInput.addEventListener("change", function () {
+        var file = fileInput.files && fileInput.files[0];
+        if (!file) {
+          return;
+        }
+
+        var reader = new FileReader();
+        reader.addEventListener("load", function () {
+          textbox.value = String(reader.result || "");
+          filenameBox.value = file.name.replace(/\.[^.]+$/, "") || "texter";
+          var importedExtension = file.name.match(/\.([^.]+)$/);
+          if (importedExtension) {
+            var extension = importedExtension[1].toLowerCase();
+            for (var i = 0; i < extensionSelect.options.length; i += 1) {
+              if (extensionSelect.options[i].value === extension) {
+                extensionSelect.value = extension;
+                break;
+              }
+            }
+          }
+          updateStats();
+          saveLocally();
+          textbox.focus();
+        });
+        reader.readAsText(file);
+        fileInput.value = "";
+      });
+
+      document.getElementById("fullwidth").addEventListener("change", function (event) {
+        textbox.classList.toggle("narrow", event.target.checked);
+      });
+
+      document.getElementById("spellcheck").addEventListener("change", function (event) {
+        textbox.spellcheck = event.target.checked;
+      });
+
+      document.getElementById("print").addEventListener("click", function (event) {
+        event.preventDefault();
+        window.print();
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+          event.preventDefault();
+          saveLink.click();
+        } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "o") {
+          event.preventDefault();
+          if (!isMobileClient()) {
+            fileInput.click();
+          }
+        }
+      });
+    }());
+    //]]>
+  </script>
+</body>
+</html>
