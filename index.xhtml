@@ -185,6 +185,7 @@
           <option value="js">.js</option>
           <option value="yaml">.yaml</option>
         </select>
+        <button type="button" id="clear" title="Clear all text">Clear</button>
         <button type="button" id="download">Download</button>
       </span>
     </span>
@@ -357,6 +358,16 @@
       applyTheme();
       textbox.setSelectionRange(textbox.value.length, textbox.value.length);
       updateStats();
+
+      getElement("clear").addEventListener("click", function () {
+        if (!textbox.value) { textbox.focus(); return; }
+        if (!window.confirm("Clear all text? This cannot be undone.")) { return; }
+        window.clearTimeout(saveTimer);
+        textbox.value = "";
+        updateStats();
+        saveLocally();
+        textbox.focus();
+      });
 
       getElement("download").addEventListener("click", function () {
         downloadText(textbox.value, getFilename(), getMimeType(extensionSelect.value));
